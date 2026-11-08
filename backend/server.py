@@ -11,8 +11,27 @@ from urllib.parse import parse_qs, urlparse
 from . import config, db, line_api, services, switchbot_api
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
-CONN = db.connect()
-db.init_db(CONN)
+
+# 同時アクセス対策: 接続はスレッドごとに持つ（1つの接続を全スレッドで共有すると
+# カーソル競合で 500 になるため）。CONN はスレッドローカル接続へのプロキシ。
+_thread_local = threading.local()
+
+
+def _get_conn():
+    conn = getattr(_thread_local, "conn", None)
+    if conn is None:
+        conn = db.connect()
+        db.init_db(conn)
+        _thread_local.conn = conn
+    return conn
+
+
+class _ConnProxy:
+    def __getattr__(self, name):
+        return getattr(_get_conn(), name)
+
+
+CONN = _ConnProxy()
 
 
 # ---------- 共通ヘルパー ----------
@@ -172,11 +191,14 @@ class Handler(BaseHTTPRequestHandler):
             " ORDER BY created_at DESC LIMIT 20",
             (member["member_id"],),
         ).fetchall()
+        until = services.event_mode_until(CONN)
         return self.send_json(200, {
             "member": member_json(member),
             "openStay": ({"stay_id": stay["stay_id"], "entry_at": stay["entry_at"]} if stay else None),
             "history": [dict(r) for r in history],
             "myRank": services.my_rank(CONN, member["member_id"], "month"),
+            "eventMode": until is not None,
+            "eventModeUntil": until.isoformat(timespec="seconds") if until else None,
         })
 
     def api_entry(self, query):
@@ -255,11 +277,14 @@ class Handler(BaseHTTPRequestHandler):
                 "SELECT created_at, line_user_id, result FROM access_logs"
                 " WHERE type='entry' AND result NOT IN ('success') ORDER BY created_at DESC LIMIT 10"
             ).fetchall()
+            ev_until = services.event_mode_until(CONN)
             return self.send_json(200, {
                 "todayEntries": entries,
                 "todayUniqueUsers": unique,
                 "currentlyInside": [dict(r) for r in inside],
                 "recentFailures": [dict(r) for r in failures],
+                "eventMode": ev_until is not None,
+                "eventModeUntil": ev_until.isoformat(timespec="seconds") if ev_until else None,
             })
         if path == "/api/admin/members":
             q = (query.get("q") or [""])[0]
@@ -313,6 +338,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/admin/settings":
             return self.send_json(200, {
                 "unlock_cooldown_sec": services.cooldown_seconds(CONN),
+                "unlock_share_sec": services.unlock_share_seconds(CONN),
                 "auto_exit_hours": services.auto_exit_hours(CONN),
             })
         if path == "/api/admin/integration":
@@ -372,8 +398,18 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/admin/settings":
             if "unlock_cooldown_sec" in body:
                 db.set_setting(CONN, "unlock_cooldown_sec", int(body["unlock_cooldown_sec"]))
+            if "unlock_share_sec" in body:
+                db.set_setting(CONN, "unlock_share_sec", int(body["unlock_share_sec"]))
             if "auto_exit_hours" in body:
                 db.set_setting(CONN, "auto_exit_hours", int(body["auto_exit_hours"]))
+            return self.send_json(200, {"ok": True})
+        if path == "/api/admin/event-mode":
+            minutes = int(body.get("minutes") or 60)
+            minutes = max(5, min(minutes, 24 * 60))
+            until = services.set_event_mode(CONN, minutes)
+            return self.send_json(200, {"ok": True, "eventModeUntil": until.isoformat(timespec="seconds")})
+        if path == "/api/admin/event-mode/stop":
+            services.clear_event_mode(CONN)
             return self.send_json(200, {"ok": True})
         m = re.match(r"^/api/admin/members/([\w-]+)/status$", path)
         if m:

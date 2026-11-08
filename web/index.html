@@ -9,8 +9,13 @@
 </head>
 <body>
 <header class="app-header">
-  <h1>Avel 入退室</h1>
-  <div class="subtitle">登録済みの会員だけが解錠して入室できます</div>
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="9" r="4"/><path d="M10.1 11.6h3.8l1.1 7.4H9z"/></svg></span>
+    <div>
+      <h1>Avel 入退室</h1>
+      <div class="subtitle">登録済みの会員だけが解錠して入室できます</div>
+    </div>
+  </div>
 </header>
 
 <main>
@@ -49,8 +54,9 @@
         <div class="state" id="stateText">—</div>
         <div class="detail" id="stateDetail"></div>
       </div>
-      <button id="entryBtn" type="button" class="btn-big">入室（解錠）</button>
-      <button id="exitBtn" type="button" class="btn-big btn-exit hidden">退室</button>
+      <div id="eventModeNote" class="event-note hidden">イベントモード中：ドアが開いています。そのまま入室ボタンを押してください（解錠は行われません）</div>
+      <button id="entryBtn" type="button" class="btn-big btn-entry"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="16.5" r="4"/><path d="M10.8 13.2 20 4"/><path d="M15.2 9.3l2.8 2.8"/></svg><span>入室（解錠）</span></button>
+      <button id="exitBtn" type="button" class="btn-big btn-exit hidden"><svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>退室</span></button>
       <p class="small">退室の記録がない場合は、入室から12時間で自動退室扱いになります。</p>
     </section>
 

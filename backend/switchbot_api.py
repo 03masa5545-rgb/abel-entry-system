@@ -60,7 +60,7 @@ def unlock(token=None, secret=None, device_id=None):
     secret = secret or env_secret
     device_id = device_id or env_device
     if not (token and secret and device_id):
-        print("[SwitchBot MOCK] unlock (認証情報未設定のためモック動作)")
+        print("[SwitchBot MOCK] unlock (認証情報未設定のためモック動作)", flush=True)
         return "mock", True
     try:
         payload = _request(

@@ -228,3 +228,45 @@ document.addEventListener("DOMContentLoaded", () => {
     applyBtn.addEventListener("click", () => setTimeout(loadIntegration, 100));
   }
 });
+
+/* イベントモード（一斉入室対策）: 指定時間の間、解錠せず記録のみで入室できる */
+document.addEventListener("DOMContentLoaded", () => {
+  const statusEl = document.getElementById("eventModeStatus");
+  const startBtn = document.getElementById("eventModeBtn");
+  const offBtn = document.getElementById("eventModeOffBtn");
+  if (!statusEl || !startBtn || !offBtn) return;
+
+  async function refreshEventStatus() {
+    try {
+      const d = await intApi("/api/admin/dashboard");
+      statusEl.textContent = d.eventMode
+        ? "イベントモード中です（" + d.eventModeUntil + " まで）。入室は記録のみで、解錠は行われません。ドアは開けたままにしてください。"
+        : "イベントモードはオフです。通常は1人ずつ解錠して入室します。";
+    } catch (e) {
+      statusEl.textContent = "";
+    }
+  }
+
+  startBtn.addEventListener("click", async () => {
+    try {
+      const minutes = parseInt(document.getElementById("eventMinutes").value, 10) || 60;
+      const r = await intApi("/api/admin/event-mode", { method: "POST", body: { minutes } });
+      intMsg("イベントモードを開始しました（" + r.eventModeUntil + " まで）");
+      refreshEventStatus();
+    } catch (e) {
+      intMsg("イベントモードの開始に失敗しました: " + e.message);
+    }
+  });
+
+  offBtn.addEventListener("click", async () => {
+    try {
+      await intApi("/api/admin/event-mode/stop", { method: "POST", body: {} });
+      intMsg("イベントモードを終了しました");
+      refreshEventStatus();
+    } catch (e) {
+      intMsg("イベントモードの終了に失敗しました: " + e.message);
+    }
+  });
+
+  refreshEventStatus();
+});

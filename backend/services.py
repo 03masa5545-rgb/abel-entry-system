@@ -1,10 +1,14 @@
 """入退室のコアロジック。仕様書 §5 / §14 に対応する。"""
 import csv
 import io
+import threading
 import uuid
 from datetime import timedelta
 
 from . import config, db, switchbot_api
+
+# 解錠API呼び出しの直列化（一斉入室時に SwitchBot API へ同時多重リクエストしない）
+_unlock_lock = threading.Lock()
 
 
 def _uid():
@@ -100,6 +104,70 @@ def cooldown_seconds(conn):
     return int(db.get_setting(conn, "unlock_cooldown_sec", config.get_int("UNLOCK_COOLDOWN_SEC", 30)))
 
 
+def unlock_share_seconds(conn):
+    """解錠の共有ウィンドウ（秒）。この間に誰かが解錠済みなら、次の人はAPIを呼ばずに入れる。"""
+    return int(db.get_setting(conn, "unlock_share_sec", config.get_int("UNLOCK_SHARE_SEC", 10)))
+
+
+def event_mode_until(conn):
+    value = db.get_setting(conn, "event_mode_until", "")
+    if not value:
+        return None
+    until = db.parse_iso(value)
+    if until and until > db.now():
+        return until
+    return None
+
+
+def event_mode_active(conn):
+    return event_mode_until(conn) is not None
+
+
+def set_event_mode(conn, minutes):
+    until = db.now() + timedelta(minutes=int(minutes))
+    db.set_setting(conn, "event_mode_until", until.isoformat(timespec="seconds"))
+    return until
+
+
+def clear_event_mode(conn):
+    db.delete_setting(conn, "event_mode_until")
+
+
+def _recently_unlocked(conn):
+    """共有ウィンドウ内に解錠成功があるか。"""
+    last = db.get_setting(conn, "last_unlock_at", "")
+    if not last:
+        return False
+    last_dt = db.parse_iso(last)
+    if not last_dt:
+        return False
+    return (db.now() - last_dt).total_seconds() < unlock_share_seconds(conn)
+
+
+def _perform_unlock(conn, line_user_id, member_id, method):
+    """解錠を実行する。戻り値: (unlock_mode, error_payload_or_None)
+
+    - イベントモード中: 解錠しない（ドア開放前提で記録のみ）→ unlock_mode='event'
+    - 共有ウィンドウ内: 直前の解錠でドアが開いている前提でAPIを呼ばない → 'shared'
+    - それ以外: ロックを取り、ウィンドウを再確認してからAPIを呼ぶ → 'real' / 'mock'
+    """
+    if event_mode_active(conn):
+        return "event", None
+    if _recently_unlocked(conn):
+        return "shared", None
+    with _unlock_lock:
+        # ロック待ちの間に他の人が解錠した可能性があるので再確認
+        if _recently_unlocked(conn):
+            return "shared", None
+        sb_token, sb_secret, sb_device, _ = get_switchbot_creds(conn)
+        mode, ok = switchbot_api.unlock(sb_token, sb_secret, sb_device)
+        if not ok:
+            _log(conn, member_id, line_user_id, "entry", "error", method)
+            return None, (502, {"error": "unlock_failed", "message": "解錠に失敗しました。スタッフにお声がけください。"})
+        db.set_setting(conn, "last_unlock_at", db.now_iso())
+        return mode, None
+
+
 def auto_exit_hours(conn):
     return int(db.get_setting(conn, "auto_exit_hours", config.get_int("AUTO_EXIT_HOURS", 12)))
 
@@ -132,11 +200,9 @@ def do_entry(conn, line_user_id, method="liff"):
     if stay:
         _close_stay(conn, stay, db.now(), "forced")
 
-    sb_token, sb_secret, sb_device, _ = get_switchbot_creds(conn)
-    mode, ok = switchbot_api.unlock(sb_token, sb_secret, sb_device)
-    if not ok:
-        _log(conn, member["member_id"], line_user_id, "entry", "error", method)
-        return 502, {"error": "unlock_failed", "message": "解錠に失敗しました。スタッフにお声がけください。"}
+    mode, error = _perform_unlock(conn, line_user_id, member["member_id"], method)
+    if error:
+        return error
 
     stay_id = "s_" + _uid()[:12]
     entry_at = db.now_iso()
@@ -146,7 +212,13 @@ def do_entry(conn, line_user_id, method="liff"):
     )
     conn.commit()
     _log(conn, member["member_id"], line_user_id, "entry", "success", method)
-    return 200, {"ok": True, "stay_id": stay_id, "entry_at": entry_at, "unlock_mode": mode}
+    return 200, {
+        "ok": True,
+        "stay_id": stay_id,
+        "entry_at": entry_at,
+        "unlock_mode": mode,
+        "event_mode": mode == "event",
+    }
 
 
 def do_exit(conn, line_user_id):

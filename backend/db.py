@@ -6,7 +6,10 @@ from datetime import datetime, timedelta, timezone
 from . import config
 
 JST = timezone(timedelta(hours=9))
-_lock = threading.Lock()
+# RLock（再入可能）必須: 設定保存のように「ロック保持中に接続を遅延生成し、
+# その初期化(init_db)で同じロックを取る」経路があるため、通常の Lock だと
+# 同一スレッドでデッドロックする。
+_lock = threading.RLock()
 
 
 def now():
@@ -25,8 +28,11 @@ def parse_iso(value):
 
 def connect():
     config.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(config.DB_PATH, check_same_thread=False)
+    # 同時アクセス対策: WALモード＋busy_timeoutで「database is locked」を避ける
+    conn = sqlite3.connect(config.DB_PATH, check_same_thread=False, timeout=30)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")
     return conn
 
 
