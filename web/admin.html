@@ -120,9 +120,65 @@
       </table>
     </div>
   </section>
+  <section class="card">
+    <h2>入口素材・連携設定</h2>
+
+    <h3>公開URL（QR・NFCの飛び先）</h3>
+    <div class="inline-form">
+      <div class="grow">
+        <label for="baseUrlInput">ベースURL（LIFF URLなど。空欄ならこのサーバーのURL）</label>
+        <input type="text" id="baseUrlInput" placeholder="https://liff.line.me/xxxx">
+      </div>
+      <button id="baseUrlSaveBtn" type="button">保存</button>
+    </div>
+
+    <h3>印刷用QRコード</h3>
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="lbl">入室用QR</div>
+        <div id="qrEntry" style="margin:12px auto;width:220px"></div>
+        <div class="small" id="entryUrlText" style="word-break:break-all"></div>
+        <div class="actions">
+          <button id="qrEntryPng" type="button">PNGをダウンロード</button>
+          <button id="qrEntryPop" type="button" class="secondary">印刷用POPを開く</button>
+          <button id="copyEntryUrl" type="button" class="secondary">URLをコピー（NFC用）</button>
+        </div>
+      </div>
+      <div class="stat-box">
+        <div class="lbl">退室用QR</div>
+        <div id="qrExit" style="margin:12px auto;width:220px"></div>
+        <div class="small" id="exitUrlText" style="word-break:break-all"></div>
+        <div class="actions">
+          <button id="qrExitPng" type="button">PNGをダウンロード</button>
+          <button id="qrExitPop" type="button" class="secondary">印刷用POPを開く</button>
+          <button id="copyExitUrl" type="button" class="secondary">URLをコピー（NFC用）</button>
+        </div>
+      </div>
+    </div>
+    <p class="small">NFCタグを使う場合は、コピーしたURLをNFCタグに書き込んで入口・室内に貼ってください。スマホをかざすとURLが開きます。</p>
+
+    <h3>SwitchBot連携</h3>
+    <p class="small" id="sbStatus">状態を確認中…</p>
+    <div class="inline-form">
+      <div class="grow"><label for="sbToken">トークン</label><input type="password" id="sbToken" autocomplete="off" placeholder="変更する場合のみ入力"></div>
+      <div class="grow"><label for="sbSecret">シークレット</label><input type="password" id="sbSecret" autocomplete="off" placeholder="変更する場合のみ入力"></div>
+    </div>
+    <div class="inline-form">
+      <div class="grow"><label for="sbDevice">ロックのデバイスID</label><input type="text" id="sbDevice" autocomplete="off" placeholder="変更する場合のみ入力"></div>
+      <button id="sbSaveBtn" type="button">保存</button>
+    </div>
+    <div class="actions">
+      <button id="sbTestBtn" type="button" class="secondary">接続テスト（デバイス一覧）</button>
+      <button id="sbClearBtn" type="button" class="secondary">保存した連携情報を消す</button>
+    </div>
+    <ul class="plain" id="sbTestResult"></ul>
+    <p class="small">保存した値はサーバー内のデータベースにのみ保管され、画面には再表示されません（状態のみ表示）。リポジトリにも含まれません。</p>
+  </section>
 </main>
 
 <footer class="app-footer">アーベル 入退室システム 管理者画面</footer>
+<script src="vendor/qrcode.min.js"></script>
 <script src="admin.js"></script>
+<script src="integration.js"></script>
 </body>
 </html>

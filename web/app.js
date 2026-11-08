@@ -151,6 +151,12 @@ function renderMe(me) {
     : "";
   $("entryBtn").classList.toggle("hidden", inside);
   $("exitBtn").classList.toggle("hidden", !inside);
+  // 退室用QR（?screen=exit）から来た場合は退室ボタンを目立たせる
+  if (inside && new URLSearchParams(location.search).get("screen") === "exit") {
+    $("exitBtn").style.outline = "4px solid #f5a623";
+    $("stateText").textContent = "入室中（退室はこちら）";
+    $("exitBtn").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
   if (me.myRank) {
     $("rankCount").textContent = me.myRank.count

@@ -96,3 +96,9 @@ def set_setting(conn, key, value):
             (key, str(value)),
         )
         conn.commit()
+
+
+def delete_setting(conn, key):
+    with _lock:
+        conn.execute("DELETE FROM settings WHERE key = ?", (key,))
+        conn.commit()

@@ -89,8 +89,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.serve_static("index.html", "text/html; charset=utf-8")
             if path in ("/admin", "/admin.html"):
                 return self.serve_static("admin.html", "text/html; charset=utf-8")
-            if path in ("/app.js", "/admin.js"):
+            if path in ("/app.js", "/admin.js", "/integration.js"):
                 return self.serve_static(path.lstrip("/"), "text/javascript; charset=utf-8")
+            if path == "/vendor/qrcode.min.js":
+                return self.serve_static("vendor/qrcode.min.js", "text/javascript; charset=utf-8")
             if path == "/style.css":
                 return self.serve_static("style.css", "text/css; charset=utf-8")
             if path == "/api/config":
@@ -313,6 +315,19 @@ class Handler(BaseHTTPRequestHandler):
                 "unlock_cooldown_sec": services.cooldown_seconds(CONN),
                 "auto_exit_hours": services.auto_exit_hours(CONN),
             })
+        if path == "/api/admin/integration":
+            base_url = db.get_setting(CONN, "base_url", "")
+            if not base_url:
+                host = self.headers.get("Host", "localhost")
+                scheme = "https" if self.headers.get("X-Forwarded-Proto") == "https" else "http"
+                base_url = f"{scheme}://{host}"
+            base_url = base_url.rstrip("/")
+            return self.send_json(200, {
+                "base_url": base_url,
+                "entry_url": base_url + "/",
+                "exit_url": base_url + "/?screen=exit",
+                "switchbot": services.switchbot_status(CONN),
+            })
         return self.send_json(404, {"error": "not_found"})
 
     def api_admin_post(self, path, query):
@@ -324,11 +339,36 @@ class Handler(BaseHTTPRequestHandler):
             closed = services.run_auto_exit(CONN)
             return self.send_json(200, {"closed": closed})
         if path == "/api/admin/unlock":
-            mode, ok = switchbot_api.unlock()
+            sb_token, sb_secret, sb_device, _ = services.get_switchbot_creds(CONN)
+            mode, ok = switchbot_api.unlock(sb_token, sb_secret, sb_device)
             services._log(CONN, None, admin_uid, "unlock_staff", "success" if ok else "error", "admin")
             if not ok:
                 return self.send_json(502, {"error": "unlock_failed"})
             return self.send_json(200, {"ok": True, "unlock_mode": mode})
+        if path == "/api/admin/integration":
+            base_url = (body.get("base_url") or "").strip().rstrip("/")
+            if base_url:
+                db.set_setting(CONN, "base_url", base_url)
+            else:
+                db.delete_setting(CONN, "base_url")
+            return self.send_json(200, {"ok": True})
+        if path == "/api/admin/switchbot":
+            if body.get("clear"):
+                for key in ("sb_token", "sb_secret", "sb_device_id"):
+                    db.delete_setting(CONN, key)
+                return self.send_json(200, {"ok": True, "switchbot": services.switchbot_status(CONN)})
+            mapping = {"token": "sb_token", "secret": "sb_secret", "device_id": "sb_device_id"}
+            for field, key in mapping.items():
+                value = (body.get(field) or "").strip()
+                if value:
+                    db.set_setting(CONN, key, value)
+            return self.send_json(200, {"ok": True, "switchbot": services.switchbot_status(CONN)})
+        if path == "/api/admin/switchbot/test":
+            sb_token, sb_secret, _, _ = services.get_switchbot_creds(CONN)
+            ok, result = switchbot_api.list_devices(sb_token, sb_secret)
+            if not ok:
+                return self.send_json(502, {"error": "connection_failed", "message": result})
+            return self.send_json(200, {"ok": True, "devices": result})
         if path == "/api/admin/settings":
             if "unlock_cooldown_sec" in body:
                 db.set_setting(CONN, "unlock_cooldown_sec", int(body["unlock_cooldown_sec"]))
@@ -426,7 +466,7 @@ def main():
     threading.Thread(target=auto_exit_loop, daemon=True).start()
     server = ThreadingHTTPServer(("0.0.0.0", config.PORT), Handler)
     mode = "DEMO" if config.DEMO_MODE else "PRODUCTION"
-    sb = "real" if switchbot_api.configured() else "mock"
+    sb = "real" if all(switchbot_api.env_creds()) else "mock"
     print(f"アーベル入退室システム起動: http://localhost:{config.PORT} (mode={mode}, switchbot={sb})")
     server.serve_forever()
 

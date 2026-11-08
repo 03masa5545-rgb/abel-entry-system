@@ -24,6 +24,10 @@
   - リッチメニュー等のポストバック（action=entry / action=exit）で入退室し、確認を **Reply API（応答メッセージ＝通数課金対象外）** で返す
   - アカウント連携（方式B）の連携イベント受信と nonce 照合
 - 利用者マイページ（現在の状態、自分の順位、自分の履歴）
+- 管理者画面の「入口素材・連携設定」
+  - 入室用／退室用QRコードの生成（印刷用PNGダウンロード、印刷用POP表示）
+  - NFCタグ用URLのコピー、ベースURL（LIFF URL）の設定
+  - SwitchBot連携設定（トークン／シークレット／デバイスIDを画面から保存。値はサーバー内DBにのみ保管され再表示されない）と接続テスト（デバイス一覧取得）
 
 ## 動かし方
 
@@ -48,8 +52,8 @@ python3 run.py
 | `LINE_CHANNEL_ID` | IDトークン検証用チャネルID |
 | `LINE_CHANNEL_SECRET` | Webhook 署名検証用 |
 | `LINE_CHANNEL_ACCESS_TOKEN` | Reply送信・アカウント連携用 |
-| `SWITCHBOT_TOKEN` / `SWITCHBOT_SECRET` | SwitchBot API の認証情報（サーバー側のみに置く） |
-| `SWITCHBOT_LOCK_DEVICE_ID` | 入口の SwitchBot ロックのデバイスID |
+| `SWITCHBOT_TOKEN` / `SWITCHBOT_SECRET` | SwitchBot API の認証情報（サーバー側のみに置く）。管理者画面から保存した値が優先される |
+| `SWITCHBOT_LOCK_DEVICE_ID` | 入口の SwitchBot ロックのデバイスID（管理者画面からも設定可） |
 | `ADMIN_LINE_USER_IDS` | 管理者の LINEユーザーID（カンマ区切り） |
 
 前提条件: SwitchBot ロックは BLE 機器のため、**ハブ（Hub Mini 等）でクラウドサービスを有効化**しておく必要があります。

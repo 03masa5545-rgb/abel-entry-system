@@ -64,6 +64,38 @@ def _close_stay(conn, stay, exit_dt, exit_method):
     return minutes
 
 
+def get_switchbot_creds(conn):
+    """SwitchBot 認証情報を返す (token, secret, device_id, source)。
+
+    管理者画面で保存した DB の値を優先し、無い項目は環境変数で補う。
+    """
+    env_token, env_secret, env_device = switchbot_api.env_creds()
+    sb_token = db.get_setting(conn, "sb_token", "") or env_token
+    sb_secret = db.get_setting(conn, "sb_secret", "") or env_secret
+    sb_device = db.get_setting(conn, "sb_device_id", "") or env_device
+    from_db = bool(
+        db.get_setting(conn, "sb_token", "")
+        or db.get_setting(conn, "sb_secret", "")
+        or db.get_setting(conn, "sb_device_id", "")
+    )
+    return sb_token, sb_secret, sb_device, ("db" if from_db else "env")
+
+
+def switchbot_status(conn):
+    token, secret, device_id, source = get_switchbot_creds(conn)
+    configured = bool(token and secret and device_id)
+    masked = ""
+    if device_id:
+        masked = "****" + device_id[-4:] if len(device_id) > 4 else "****"
+    return {
+        "configured": configured,
+        "source": source if configured else None,
+        "device_id_masked": masked,
+        "has_token": bool(token),
+        "has_secret": bool(secret),
+    }
+
+
 def cooldown_seconds(conn):
     return int(db.get_setting(conn, "unlock_cooldown_sec", config.get_int("UNLOCK_COOLDOWN_SEC", 30)))
 
@@ -100,7 +132,8 @@ def do_entry(conn, line_user_id, method="liff"):
     if stay:
         _close_stay(conn, stay, db.now(), "forced")
 
-    mode, ok = switchbot_api.unlock()
+    sb_token, sb_secret, sb_device, _ = get_switchbot_creds(conn)
+    mode, ok = switchbot_api.unlock(sb_token, sb_secret, sb_device)
     if not ok:
         _log(conn, member["member_id"], line_user_id, "entry", "error", method)
         return 502, {"error": "unlock_failed", "message": "解錠に失敗しました。スタッフにお声がけください。"}
