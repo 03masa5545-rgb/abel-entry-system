@@ -1,0 +1,16 @@
+# 認証情報・秘密情報は絶対にコミットしない
+.env
+*.env
+!/.env.example
+
+# データベース（個人情報を含む）
+data/
+*.db
+*.sqlite3
+
+# Python
+__pycache__/
+*.pyc
+
+# ログ
+*.log

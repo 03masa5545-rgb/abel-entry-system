@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>アーベル 入退室 管理者画面</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="app-header">
+  <h1>Avel 入退室 管理者画面</h1>
+  <div class="subtitle">運営スタッフ用</div>
+</header>
+
+<main class="wide">
+  <div class="demo-bar">
+    <div class="title">管理者ID</div>
+    <div class="inline-form">
+      <div class="grow">
+        <label for="adminId">管理者ID（デモ時は demo-admin が管理者）</label>
+        <input type="text" id="adminId" value="demo-admin">
+      </div>
+      <button id="adminApplyBtn" type="button">適用</button>
+    </div>
+    <div class="small">現在の管理者ID: <span id="adminIdNow"></span></div>
+  </div>
+
+  <div id="message" class="message" role="alert"></div>
+
+  <section class="card">
+    <h2>ダッシュボード</h2>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="num" id="todayEntries">—</div><div class="lbl">本日の入室数</div></div>
+      <div class="stat-box"><div class="num" id="todayUnique">—</div><div class="lbl">本日の実利用者数</div></div>
+    </div>
+    <h3>現在入室中</h3>
+    <ul class="plain" id="insideList"><li>読み込み中…</li></ul>
+    <h3>直近の解錠失敗</h3>
+    <ul class="plain" id="failureList"><li>読み込み中…</li></ul>
+    <div class="actions">
+      <button id="refreshDashBtn" type="button" class="secondary">ダッシュボード更新</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>運営操作</h2>
+    <div class="actions">
+      <button id="autoExitBtn" type="button">12時間自動退室を手動実行</button>
+      <button id="unlockBtn" type="button" class="secondary">スタッフ遠隔解錠</button>
+    </div>
+    <p class="small">遠隔解錠は、スマホを忘れた利用者の対応などスタッフ用です。自動退室は入室から12時間を超えた未退室分を閉じます。</p>
+  </section>
+
+  <section class="card">
+    <h2>会員一覧</h2>
+    <div class="inline-form">
+      <div class="grow">
+        <label for="memberQuery">検索（氏名・会員ID）</label>
+        <input type="text" id="memberQuery" placeholder="空欄で全件">
+      </div>
+      <button id="memberSearchBtn" type="button">検索</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>会員ID</th><th>氏名</th><th>LINEユーザーID</th><th>登録日</th><th>ステータス</th></tr></thead>
+        <tbody id="memberBody"><tr><td colspan="5">読み込み中…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>利用歴</h2>
+    <div class="inline-form">
+      <div class="grow"><label for="histFrom">開始日</label><input type="date" id="histFrom"></div>
+      <div class="grow"><label for="histTo">終了日</label><input type="date" id="histTo"></div>
+    </div>
+    <div class="inline-form">
+      <div class="grow">
+        <label for="histResult">結果</label>
+        <select id="histResult">
+          <option value="">すべて</option>
+          <option value="success">成功</option>
+          <option value="denied_unregistered">未登録のため不可</option>
+          <option value="denied_suspended">利用停止のため不可</option>
+          <option value="error">エラー</option>
+        </select>
+      </div>
+      <div class="grow"><label for="histMember">会員ID（任意）</label><input type="text" id="histMember"></div>
+      <button id="histSearchBtn" type="button">表示</button>
+    </div>
+    <div class="actions">
+      <a id="histCsvLink" class="btn secondary" href="#" target="_blank" rel="noopener">利用歴をCSVで書き出す</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>日時</th><th>会員ID</th><th>氏名</th><th>種別</th><th>結果</th><th>方法</th></tr></thead>
+        <tbody id="historyBody"><tr><td colspan="6">読み込み中…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>ランキング</h2>
+    <div class="tabs" id="rankPeriodTabs">
+      <button type="button" data-period="month" class="active">今月</button>
+      <button type="button" data-period="last_month">先月</button>
+      <button type="button" data-period="all">全期間</button>
+    </div>
+    <div class="tabs" id="rankTypeTabs">
+      <button type="button" data-type="count" class="active">回数</button>
+      <button type="button" data-type="duration">時間</button>
+    </div>
+    <div class="actions">
+      <a id="rankCsvLink" class="btn secondary" href="#" target="_blank" rel="noopener">ランキングをCSVで書き出す</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>順位</th><th>会員ID</th><th>氏名</th><th>回数</th><th>時間</th></tr></thead>
+        <tbody id="rankingBody"><tr><td colspan="5">読み込み中…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer class="app-footer">アーベル 入退室システム 管理者画面</footer>
+<script src="admin.js"></script>
+</body>
+</html>

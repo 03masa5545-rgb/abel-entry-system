@@ -1,0 +1,76 @@
+# アーベル 入退室システム
+
+アーベル（学生向けコミュニティスペース）の入退室を、利用者のスマートフォン1台で完結させるシステムです。
+公式LINEを友だち追加 → 会員登録 → 登録済み会員だけがスマホで解錠して入室でき、入室がそのまま記録になります。
+
+- 仕様書: [docs/spec.md](docs/spec.md)
+- 設計メモ: [docs/design-memo.md](docs/design-memo.md)
+
+## 実装済みの機能（MVP）
+
+- 会員登録（LINEユーザーIDと紐付け、方式A）
+- 入室＝解錠（SwitchBot API連携。未設定時はモック動作）
+  - 未登録・利用停止の会員は解錠しない
+  - 解錠のクールダウン（初期30秒）
+  - 退室忘れのまま再入室した場合は前のセッションを自動で閉じる
+- 退室記録（取れていない場合は**入室から12時間で自動退室扱い**、滞在720分で記録）
+- 管理者画面
+  - ダッシュボード（本日の入室数・実利用者数、現在入室中、直近の解錠失敗）
+  - 会員一覧・検索、ステータス変更（有効／停止／退会）、LINEアカウント再紐付け
+  - 利用歴の検索と **CSV書き出し**（書き出しは管理ログに記録）
+  - 利用回数・利用時間のランキング（今月／先月／全期間）とCSV書き出し
+  - 設定（クールダウン秒数、自動退室までの時間）、12時間自動退室の手動実行、スタッフ遠隔解錠
+- LINE Webhook
+  - リッチメニュー等のポストバック（action=entry / action=exit）で入退室し、確認を **Reply API（応答メッセージ＝通数課金対象外）** で返す
+  - アカウント連携（方式B）の連携イベント受信と nonce 照合
+- 利用者マイページ（現在の状態、自分の順位、自分の履歴）
+
+## 動かし方
+
+前提: Python 3.10 以上。外部パッケージは不要（標準ライブラリのみ）。
+
+```bash
+cp .env.example .env   # デモ動作だけなら初期値のまま（DEMO_MODE=1）
+python3 run.py
+```
+
+- 利用者画面: http://localhost:8000/
+- 管理者画面: http://localhost:8000/admin
+- デモモードでは画面内の入力欄でユーザーIDを切り替えて動作確認できます（管理者は `demo-admin`）。
+- データは `data/abel_entry.db`（SQLite）に保存されます。
+
+## 本番運用に必要な設定（.env）
+
+| 変数 | 内容 |
+|---|---|
+| `DEMO_MODE=0` | 本番では必ず 0 にする |
+| `LIFF_ID` | LINE Developers で発行した LIFF ID |
+| `LINE_CHANNEL_ID` | IDトークン検証用チャネルID |
+| `LINE_CHANNEL_SECRET` | Webhook 署名検証用 |
+| `LINE_CHANNEL_ACCESS_TOKEN` | Reply送信・アカウント連携用 |
+| `SWITCHBOT_TOKEN` / `SWITCHBOT_SECRET` | SwitchBot API の認証情報（サーバー側のみに置く） |
+| `SWITCHBOT_LOCK_DEVICE_ID` | 入口の SwitchBot ロックのデバイスID |
+| `ADMIN_LINE_USER_IDS` | 管理者の LINEユーザーID（カンマ区切り） |
+
+前提条件: SwitchBot ロックは BLE 機器のため、**ハブ（Hub Mini 等）でクラウドサービスを有効化**しておく必要があります。
+
+## セキュリティ上の注意
+
+- `.env` やデータベースは絶対に Git にコミットしない（`.gitignore` 済み）。
+- 認証情報・デバイスID・物理鍵の保管場所など、解錠を迂回できる情報はこの公開リポジトリに書かない。
+- 本番では HTTPS で公開すること（LIFF の要件でもあります）。
+
+## 構成
+
+```
+├─ run.py            起動スクリプト
+├─ backend/          サーバー本体（Python 標準ライブラリのみ）
+│   ├─ server.py     ルーティング / Webhook / 管理者API
+│   ├─ services.py   入退室・ランキング・CSV・自動退室のコアロジック
+│   ├─ db.py         SQLite スキーマ
+│   ├─ line_api.py   IDトークン検証 / Reply / アカウント連携
+│   └─ switchbot_api.py  SwitchBot API v1.1（未設定時はモック）
+├─ web/              LIFF 画面・管理者画面
+├─ docs/             仕様書・設計メモ
+└─ data/             SQLite データベース（git 管理外）
+```
