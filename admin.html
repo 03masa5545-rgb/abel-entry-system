@@ -8,14 +8,20 @@
 </head>
 <body>
 <header class="app-header">
-  <h1>Avel 入退室 管理者画面</h1>
-  <div class="subtitle">運営スタッフ用</div>
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="9" r="4"/><path d="M10.1 11.6h3.8l1.1 7.4H9z"/></svg></span>
+    <div>
+      <h1>Avel 入退室 管理者画面</h1>
+      <div class="subtitle">運営スタッフ用</div>
+    </div>
+  </div>
 </header>
 
 <div class="static-demo-banner">
   これはブラウザだけで動くデモ版です。登録したデータはこのブラウザの中にだけ保存されます。実際のLINE・SwitchBot連携にはサーバー版が必要です。
   <a href="https://github.com/03masa5545-rgb/abel-entry-system" target="_blank" rel="noopener">GitHubリポジトリはこちら</a>
 </div>
+
 
 <main class="wide">
   <div class="demo-bar">
@@ -54,6 +60,9 @@
       <button id="unlockBtn" type="button" class="secondary">スタッフ遠隔解錠</button>
     </div>
     <p class="small">遠隔解錠は、スマホを忘れた利用者の対応などスタッフ用です。自動退室は入室から12時間を超えた未退室分を閉じます。</p>
+    <h3>イベントモード</h3>
+    <p class="small">イベント時など一気に人が入る時間帯は、ドアを開けたままにして、利用者は解錠なしで入室記録だけ付けられます。</p>
+    <div class="inline-form"><div class="grow"><label for="eventMinutes">イベントモード（分）</label><input type="number" id="eventMinutes" value="60" min="5" step="5"></div><button id="eventModeBtn" type="button">イベントモード開始</button><button id="eventModeOffBtn" type="button" class="secondary">終了</button></div><p class="small" id="eventModeStatus"></p>
   </section>
 
   <section class="card">

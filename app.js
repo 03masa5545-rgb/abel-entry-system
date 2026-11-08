@@ -143,9 +143,15 @@ async function loadMe() {
 }
 
 function renderMe(me) {
+  const evNote = $("eventModeNote");
+  if (evNote) {
+    evNote.classList.toggle("hidden", !me.eventMode);
+  }
   $("memberName").textContent = me.member.name || "";
   const inside = !!me.openStay;
   $("stateText").textContent = inside ? "入室中" : "入室していません";
+  $("stateText").classList.toggle("is-in", inside);
+  $("stateText").classList.toggle("is-out", !inside);
   $("stateDetail").textContent = inside
     ? "入室時刻: " + fmtDateTime(me.openStay.entry_at)
     : "";
@@ -257,7 +263,12 @@ document.addEventListener("DOMContentLoaded", () => {
     $("entryBtn").disabled = true;
     try {
       const r = await api("/api/entry", { method: "POST", body: { method: "liff" } });
-      showMessage("解錠しました。入室時刻: " + fmtDateTime(r.entry_at), "ok");
+      showMessage(
+        r.event_mode
+          ? "入室を記録しました（イベントモード）。入室時刻: " + fmtDateTime(r.entry_at)
+          : "解錠しました。入室時刻: " + fmtDateTime(r.entry_at),
+        "ok"
+      );
       await loadMe();
     } catch (err) {
       showMessage(errorMessage(err), "error");

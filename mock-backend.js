@@ -15,7 +15,7 @@
       members: [],
       logs: [],
       stays: [],
-      settings: { cooldown: 30, autoHours: 12, baseUrl: "", sb: { token: "", secret: "", deviceId: "" } },
+      settings: { cooldown: 30, autoHours: 12, shareSec: 10, eventUntil: "", lastUnlockAt: "", baseUrl: "", sb: { token: "", secret: "", deviceId: "" } },
     };
   }
 
@@ -345,6 +345,8 @@
         openStay: stay ? { stay_id: stay.stay_id, entry_at: stay.entry_at } : null,
         history: history,
         myRank: myRank(db, member.member_id),
+        eventMode: !!(db.settings.eventUntil && parseIso(db.settings.eventUntil) > new Date()),
+        eventModeUntil: db.settings.eventUntil || null,
       });
     }
 
@@ -376,6 +378,19 @@
       }
       const existing = openStayOf(db, member.member_id);
       if (existing) closeStay(existing, nowIso(), "forced");
+      // 一斉入室対策: イベントモード中は解錠なし、共有ウィンドウ内は解錠済み扱い
+      let unlockMode = "mock";
+      const inEvent = !!(db.settings.eventUntil && parseIso(db.settings.eventUntil) > new Date());
+      if (inEvent) {
+        unlockMode = "event";
+      } else if (
+        db.settings.lastUnlockAt &&
+        (new Date() - parseIso(db.settings.lastUnlockAt)) / 1000 < (Number(db.settings.shareSec) || 10)
+      ) {
+        unlockMode = "shared";
+      } else {
+        db.settings.lastUnlockAt = nowIso();
+      }
       const stay = {
         stay_id: randomId("s_"),
         member_id: member.member_id,
@@ -387,7 +402,10 @@
       db.stays.push(stay);
       addLog(db, member.member_id, uid, "entry", "success", methodName);
       saveDb(db);
-      return jsonRes(200, { ok: true, stay_id: stay.stay_id, entry_at: stay.entry_at, unlock_mode: "mock" });
+      return jsonRes(200, {
+        ok: true, stay_id: stay.stay_id, entry_at: stay.entry_at,
+        unlock_mode: unlockMode, event_mode: unlockMode === "event",
+      });
     }
 
     if (path === "/api/exit" && method === "POST") {
@@ -449,6 +467,8 @@
           todayUniqueUsers: unique,
           currentlyInside: inside,
           recentFailures: failures,
+          eventMode: !!(fresh.settings.eventUntil && parseIso(fresh.settings.eventUntil) > new Date()),
+          eventModeUntil: fresh.settings.eventUntil || null,
         });
       }
 
@@ -539,6 +559,18 @@
       if (path === "/api/admin/settings" && method === "POST") {
         if (body.unlock_cooldown_sec != null) db.settings.cooldown = Number(body.unlock_cooldown_sec);
         if (body.auto_exit_hours != null) db.settings.autoHours = Number(body.auto_exit_hours);
+        saveDb(db);
+        return jsonRes(200, { ok: true });
+      }
+
+      if (path === "/api/admin/event-mode" && method === "POST") {
+        const minutes = Math.max(5, Math.min(Number(body.minutes) || 60, 24 * 60));
+        db.settings.eventUntil = toJstIso(new Date(Date.now() + minutes * 60000));
+        saveDb(db);
+        return jsonRes(200, { ok: true, eventModeUntil: db.settings.eventUntil });
+      }
+      if (path === "/api/admin/event-mode/stop" && method === "POST") {
+        db.settings.eventUntil = "";
         saveDb(db);
         return jsonRes(200, { ok: true });
       }
