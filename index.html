@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>アーベル 入退室</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+<header class="app-header">
+  <h1>Avel 入退室</h1>
+  <div class="subtitle">登録済みの会員だけが解錠して入室できます</div>
+</header>
+
+<div class="static-demo-banner">
+  これはブラウザだけで動くデモ版です。登録したデータはこのブラウザの中にだけ保存されます。実際のLINE・SwitchBot連携にはサーバー版が必要です。
+  <a href="https://github.com/03masa5545-rgb/abel-entry-system" target="_blank" rel="noopener">GitHubリポジトリはこちら</a>
+</div>
+
+<main>
+  <!-- デモモード時のみ表示 -->
+  <div id="demoBar" class="demo-bar hidden">
+    <div class="title">デモモード（テスト用ユーザー切替）</div>
+    <div class="inline-form">
+      <div class="grow">
+        <label for="demoUserId">デモ用ユーザーID</label>
+        <input type="text" id="demoUserId" placeholder="例: demo-user-1">
+      </div>
+      <button id="demoApplyBtn" type="button">適用</button>
+    </div>
+  </div>
+
+  <div id="message" class="message" role="alert"></div>
+
+  <div id="loading" class="card">読み込み中…</div>
+
+  <!-- 未登録時 -->
+  <section id="registerView" class="card hidden">
+    <h2>会員登録</h2>
+    <p>はじめての方は、氏名を入力して登録してください。登録すると、このLINEアカウントで解錠できるようになります。</p>
+    <label for="regName">氏名</label>
+    <input type="text" id="regName" autocomplete="name" placeholder="例: 大分 太郎">
+    <div class="actions">
+      <button id="registerBtn" type="button" class="btn-big">登録する</button>
+    </div>
+  </section>
+
+  <!-- 登録済み -->
+  <div id="mainView" class="hidden">
+    <section class="card">
+      <h2><span id="memberName"></span> さん</h2>
+      <div class="status-box">
+        <div class="state" id="stateText">—</div>
+        <div class="detail" id="stateDetail"></div>
+      </div>
+      <button id="entryBtn" type="button" class="btn-big">入室（解錠）</button>
+      <button id="exitBtn" type="button" class="btn-big btn-exit hidden">退室</button>
+      <p class="small">退室の記録がない場合は、入室から12時間で自動退室扱いになります。</p>
+    </section>
+
+    <section class="card">
+      <h2>あなたの順位</h2>
+      <div class="rank-grid">
+        <div class="rank-box">
+          <div class="num" id="rankCount">—</div>
+          <div class="lbl">利用回数</div>
+        </div>
+        <div class="rank-box">
+          <div class="num" id="rankDuration">—</div>
+          <div class="lbl">利用時間</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>ランキング</h2>
+      <div class="tabs" id="periodTabs">
+        <button type="button" data-period="month" class="active">今月</button>
+        <button type="button" data-period="last_month">先月</button>
+        <button type="button" data-period="all">全期間</button>
+      </div>
+      <div class="tabs" id="typeTabs">
+        <button type="button" data-type="count" class="active">回数</button>
+        <button type="button" data-type="duration">時間</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>順位</th><th>名前</th><th>回数</th><th>時間</th></tr></thead>
+          <tbody id="rankingBody"><tr><td colspan="4">読み込み中…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>あなたの利用履歴</h2>
+      <ul class="plain" id="historyList"><li>読み込み中…</li></ul>
+    </section>
+  </div>
+</main>
+
+<footer class="app-footer">アーベル 入退室システム</footer>
+<script src="mock-backend.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

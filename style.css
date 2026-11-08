@@ -1,0 +1,223 @@
+/* アーベル入退室システム 共通スタイル
+   基調色: 青 #0679CE / スマホ前提・ボタン大きめ */
+
+:root {
+  --blue: #0679ce;
+  --blue-dark: #055fa1;
+  --blue-light: #e8f3fb;
+  --text: #222;
+  --gray: #666;
+  --border: #d7e3ee;
+  --error-bg: #fdecec;
+  --error-text: #b3261e;
+  --ok-bg: #e7f6ec;
+  --ok-text: #146c2e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+    "Noto Sans JP", Meiryo, sans-serif;
+  color: var(--text);
+  background: #f4f8fc;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+header.app-header {
+  background: var(--blue);
+  color: #fff;
+  padding: 14px 16px;
+}
+header.app-header h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+header.app-header .subtitle {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px;
+}
+main.wide { max-width: 960px; }
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  color: var(--blue-dark);
+}
+.card h3 {
+  margin: 16px 0 8px;
+  font-size: 15px;
+}
+
+/* メッセージ表示 */
+.message {
+  display: none;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  white-space: pre-wrap;
+}
+.message.show { display: block; }
+.message.error { background: var(--error-bg); color: var(--error-text); }
+.message.ok { background: var(--ok-bg); color: var(--ok-text); }
+
+/* ボタン */
+button, .btn {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+button:hover, .btn:hover { background: var(--blue-dark); }
+button:disabled { background: #9db8cc; cursor: not-allowed; }
+button.secondary, .btn.secondary {
+  background: #fff;
+  color: var(--blue);
+  border: 2px solid var(--blue);
+}
+button.secondary:hover, .btn.secondary:hover { background: var(--blue-light); }
+button.danger { background: #b3261e; }
+button.danger:hover { background: #8c1d17; }
+
+.btn-big {
+  display: block;
+  width: 100%;
+  padding: 20px;
+  font-size: 22px;
+  border-radius: 14px;
+  margin: 10px 0;
+}
+.btn-exit { background: #fff; color: var(--blue); border: 3px solid var(--blue); }
+.btn-exit:hover { background: var(--blue-light); }
+
+/* フォーム */
+label { display: block; font-size: 14px; color: var(--gray); margin: 10px 0 4px; }
+input[type="text"], input[type="date"], select {
+  font: inherit;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+.inline-form { display: flex; gap: 8px; align-items: flex-end; }
+.inline-form .grow { flex: 1; }
+.inline-form button { white-space: nowrap; }
+
+/* 状態表示 */
+.status-box {
+  background: var(--blue-light);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.status-box .state { font-size: 22px; font-weight: 700; color: var(--blue-dark); }
+.status-box .detail { font-size: 14px; color: var(--gray); }
+
+/* タブ */
+.tabs { display: flex; gap: 6px; margin: 8px 0 12px; flex-wrap: wrap; }
+.tabs button {
+  background: #fff;
+  color: var(--blue);
+  border: 1px solid var(--blue);
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 999px;
+}
+.tabs button.active { background: var(--blue); color: #fff; }
+
+/* 表 */
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 8px 6px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { color: var(--gray); font-weight: 600; white-space: nowrap; }
+.table-wrap { overflow-x: auto; }
+
+/* リスト */
+ul.plain { list-style: none; margin: 0; padding: 0; }
+ul.plain li { padding: 8px 0; border-bottom: 1px solid var(--border); }
+ul.plain li:last-child { border-bottom: none; }
+
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--blue-light);
+  color: var(--blue-dark);
+}
+.badge.ng { background: var(--error-bg); color: var(--error-text); }
+
+.rank-grid { display: flex; gap: 12px; }
+.rank-box {
+  flex: 1;
+  background: var(--blue-light);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+.rank-box .num { font-size: 24px; font-weight: 700; color: var(--blue-dark); }
+.rank-box .lbl { font-size: 13px; color: var(--gray); }
+
+.stat-grid { display: flex; gap: 12px; }
+.stat-box {
+  flex: 1;
+  background: var(--blue-light);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+.stat-box .num { font-size: 28px; font-weight: 700; color: var(--blue-dark); }
+.stat-box .lbl { font-size: 13px; color: var(--gray); }
+
+.demo-bar {
+  background: #fff8e1;
+  border: 1px solid #e6cf7a;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+.demo-bar .title { font-weight: 700; margin-bottom: 6px; }
+
+.static-demo-banner {
+  background: #fff8e1;
+  border: 1px solid #e6cf7a;
+  border-radius: 10px;
+  padding: 12px;
+  margin: 0 auto 16px;
+  max-width: 960px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.static-demo-banner a { color: var(--blue); font-weight: 700; }
+
+.hidden { display: none !important; }
+.small { font-size: 13px; color: var(--gray); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+footer.app-footer { text-align: center; color: var(--gray); font-size: 12px; padding: 16px; }
