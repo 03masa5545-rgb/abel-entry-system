@@ -62,6 +62,7 @@ def member_json(row):
         "name": row["name"],
         "status": row["status"],
         "registered_at": row["registered_at"],
+        "linked_at": row["linked_at"],
     }
 
 
@@ -141,6 +142,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.api_exit(query)
             if path == "/api/link/nonce":
                 return self.api_link_nonce(query)
+            if path == "/api/link/demo-complete":
+                return self.api_link_demo_complete(query)
             if path.startswith("/api/admin/"):
                 return self.api_admin_post(path, query)
             return self.send_json(404, {"error": "not_found"})
@@ -246,6 +249,32 @@ class Handler(BaseHTTPRequestHandler):
         if link_token:
             url = f"https://access.line.me/dialog/bot/accountLink?linkToken={link_token}&nonce={nonce}"
         return self.send_json(200, {"nonce": nonce, "accountLinkUrl": url})
+
+    def api_link_demo_complete(self, query):
+        """デモモード専用: アカウント連携の完了をシミュレートする（本番では403）。"""
+        if not config.DEMO_MODE:
+            return self.send_json(403, {"error": "forbidden", "message": "この操作はデモモード専用です。"})
+        uid = self.require_user(query)
+        if not uid:
+            return
+        member = services.get_member(CONN, uid)
+        if not member:
+            return self.send_json(403, {"error": "unregistered"})
+        nonce = (self.read_json() or {}).get("nonce")
+        row = CONN.execute(
+            "SELECT * FROM link_nonces WHERE nonce = ? AND member_id = ? AND used_at IS NULL",
+            (nonce, member["member_id"]),
+        ).fetchone()
+        if not row:
+            return self.send_json(400, {"error": "invalid_nonce", "message": "連携トークンが無効です。"})
+        ts = db.now_iso()
+        CONN.execute(
+            "UPDATE members SET linked_at = ?, updated_at = ? WHERE member_id = ?",
+            (ts, ts, member["member_id"]),
+        )
+        CONN.execute("UPDATE link_nonces SET used_at = ? WHERE nonce = ?", (ts, nonce))
+        CONN.commit()
+        return self.send_json(200, {"ok": True, "linked_at": ts})
 
     # -- 管理者API --
     def require_admin(self, query):

@@ -41,10 +41,11 @@ def register_member(conn, line_user_id, name):
         conn.commit()
         return get_member(conn, line_user_id)
     member_id = "m_" + _uid()[:12]
+    # linked_at は公式LINE連携（アカウント連携フロー）の完了時にセットする。登録時点では未連携。
     conn.execute(
         "INSERT INTO members(member_id, line_user_id, name, status, registered_at, linked_at, updated_at)"
-        " VALUES(?, ?, ?, 'active', ?, ?, ?)",
-        (member_id, line_user_id, name, ts, ts, ts),
+        " VALUES(?, ?, ?, 'active', ?, NULL, ?)",
+        (member_id, line_user_id, name, ts, ts),
     )
     conn.commit()
     return get_member(conn, line_user_id)

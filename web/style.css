@@ -469,19 +469,38 @@ button.secondary.is-loading::before {
   #loading::before, button.is-loading::before { animation-duration: 2.4s; }
 }
 
-/* 解錠は実測で約5秒かかるため、進み具合が分かるバーを出す */
-@keyframes abel-progress { from { width: 0; } to { width: 92%; } }
-button.btn-entry.is-loading, #unlockBtn.is-loading { position: relative; overflow: hidden; }
+/* 解錠は実測で約5秒かかるため、ボタンの背景自体が左から満ちていく表示にする */
+@keyframes abel-progress { from { width: 0; } to { width: 96%; } }
+button.btn-entry.is-loading, #unlockBtn.is-loading { position: relative; z-index: 0; overflow: hidden; }
 button.btn-entry.is-loading::after, #unlockBtn.is-loading::after {
   content: "";
   position: absolute;
-  left: 0; bottom: 0;
-  height: 4px; width: 0;
-  background: rgba(255, 255, 255, .95);
+  top: 0; bottom: 0; left: 0;
+  width: 0;
+  z-index: -1;
   animation: abel-progress 5s linear forwards;
 }
-#unlockBtn.is-loading::after { background: rgba(255, 255, 255, .9); }
+button.btn-entry.is-loading::after { background: rgba(2, 48, 84, .5); }
+#unlockBtn.is-loading::after { background: rgba(6, 121, 206, .22); }
 .unlock-hint { margin: 10px 2px 0; font-size: 12.5px; color: var(--muted, #5b6b7a); }
+
+/* 公式LINE連携カード */
+.link-status { display: flex; align-items: center; gap: 8px; font-weight: 700; margin: 4px 0 12px; }
+.link-status .dot { width: 10px; height: 10px; border-radius: 50%; background: #b6c2cc; flex: none; }
+.link-status.linked .dot { background: #06C755; }
+.link-status .when { font-weight: 400; font-size: 12.5px; color: var(--muted, #5b6b7a); }
+.btn-line {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: #06C755;
+  cursor: pointer;
+}
+.btn-line:active { transform: scale(.99); }
 .small { font-size: 13px; color: var(--gray); }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 footer.app-footer { text-align: center; color: var(--gray-light); font-size: 12px; padding: 18px 16px 26px; }
