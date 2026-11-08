@@ -468,6 +468,20 @@ button.secondary.is-loading::before {
 @media (prefers-reduced-motion: reduce) {
   #loading::before, button.is-loading::before { animation-duration: 2.4s; }
 }
+
+/* 解錠は実測で約5秒かかるため、進み具合が分かるバーを出す */
+@keyframes abel-progress { from { width: 0; } to { width: 92%; } }
+button.btn-entry.is-loading, #unlockBtn.is-loading { position: relative; overflow: hidden; }
+button.btn-entry.is-loading::after, #unlockBtn.is-loading::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 4px; width: 0;
+  background: rgba(255, 255, 255, .95);
+  animation: abel-progress 5s linear forwards;
+}
+#unlockBtn.is-loading::after { background: rgba(255, 255, 255, .9); }
+.unlock-hint { margin: 10px 2px 0; font-size: 12.5px; color: var(--muted, #5b6b7a); }
 .small { font-size: 13px; color: var(--gray); }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 footer.app-footer { text-align: center; color: var(--gray-light); font-size: 12px; padding: 18px 16px 26px; }

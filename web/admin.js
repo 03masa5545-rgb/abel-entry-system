@@ -315,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const orig = btn.textContent;
     btn.disabled = true;
     btn.classList.add("is-loading");
-    btn.textContent = "解錠中…";
+    btn.textContent = "解錠中…（約5秒かかります）";
     try {
       await api("/api/admin/unlock", { method: "POST", body: {} });
       showMessage("遠隔解錠しました。", "ok");

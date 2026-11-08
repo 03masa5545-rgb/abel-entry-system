@@ -284,7 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   $("entryBtn").addEventListener("click", async () => {
-    setBtnLoading($("entryBtn"), true, "解錠中…");
+    setBtnLoading($("entryBtn"), true, "解錠中…（約5秒かかります）");
     try {
       const r = await api("/api/entry", { method: "POST", body: { method: "liff" } });
       showMessage(
