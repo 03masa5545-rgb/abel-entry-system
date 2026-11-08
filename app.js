@@ -142,6 +142,30 @@ async function loadMe() {
   }
 }
 
+/* ボタンのローディング表示（解錠など時間がかかる処理用） */
+function setBtnLoading(btn, on, loadingText) {
+  if (!btn) return;
+  const label = btn.querySelector("span");
+  // span がない単純なボタンは textContent ごと差し替える（子要素があるボタンでは使わない）
+  const plain = !label && btn.children.length === 0;
+  if (on) {
+    if (label) {
+      btn.dataset.label = label.textContent;
+      if (loadingText) label.textContent = loadingText;
+    } else if (plain) {
+      btn.dataset.label = btn.textContent;
+      if (loadingText) btn.textContent = loadingText;
+    }
+    btn.classList.add("is-loading");
+    btn.disabled = true;
+  } else {
+    if (label && btn.dataset.label) label.textContent = btn.dataset.label;
+    else if (plain && btn.dataset.label) btn.textContent = btn.dataset.label;
+    btn.classList.remove("is-loading");
+    btn.disabled = false;
+  }
+}
+
 function renderMe(me) {
   const evNote = $("eventModeNote");
   if (evNote) {
@@ -247,7 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("registerBtn").addEventListener("click", async () => {
     const name = $("regName").value.trim();
     if (!name) { showMessage("氏名を入力してください。", "error"); return; }
-    $("registerBtn").disabled = true;
+    setBtnLoading($("registerBtn"), true, "登録中…");
     try {
       await api("/api/register", { method: "POST", body: { name } });
       showMessage("会員登録が完了しました。", "ok");
@@ -255,12 +279,12 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       showMessage(errorMessage(err), "error");
     } finally {
-      $("registerBtn").disabled = false;
+      setBtnLoading($("registerBtn"), false);
     }
   });
 
   $("entryBtn").addEventListener("click", async () => {
-    $("entryBtn").disabled = true;
+    setBtnLoading($("entryBtn"), true, "解錠中…");
     try {
       const r = await api("/api/entry", { method: "POST", body: { method: "liff" } });
       showMessage(
@@ -273,12 +297,12 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       showMessage(errorMessage(err), "error");
     } finally {
-      $("entryBtn").disabled = false;
+      setBtnLoading($("entryBtn"), false);
     }
   });
 
   $("exitBtn").addEventListener("click", async () => {
-    $("exitBtn").disabled = true;
+    setBtnLoading($("exitBtn"), true, "退室を記録中…");
     try {
       const r = await api("/api/exit", { method: "POST", body: {} });
       showMessage("退室しました。滞在時間: " + fmtMinutes(r.stay_minutes), "ok");
@@ -286,7 +310,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       showMessage(errorMessage(err), "error");
     } finally {
-      $("exitBtn").disabled = false;
+      setBtnLoading($("exitBtn"), false);
     }
   });
 
