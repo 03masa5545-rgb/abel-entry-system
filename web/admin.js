@@ -291,7 +291,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   $("autoExitBtn").addEventListener("click", async () => {
-    $("autoExitBtn").disabled = true;
+    const btn = $("autoExitBtn");
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.classList.add("is-loading");
+    btn.textContent = "実行中…";
     try {
       const r = await api("/api/admin/run-auto-exit", { method: "POST", body: {} });
       showMessage("自動退室を実行しました。" + r.closed + " 件を退室扱いにしました。", "ok");
@@ -300,19 +304,27 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       showMessage(err.message, "error");
     } finally {
-      $("autoExitBtn").disabled = false;
+      btn.disabled = false;
+      btn.classList.remove("is-loading");
+      btn.textContent = orig;
     }
   });
 
   $("unlockBtn").addEventListener("click", async () => {
-    $("unlockBtn").disabled = true;
+    const btn = $("unlockBtn");
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.classList.add("is-loading");
+    btn.textContent = "解錠中…";
     try {
       await api("/api/admin/unlock", { method: "POST", body: {} });
       showMessage("遠隔解錠しました。", "ok");
     } catch (err) {
       showMessage(err.message, "error");
     } finally {
-      $("unlockBtn").disabled = false;
+      btn.disabled = false;
+      btn.classList.remove("is-loading");
+      btn.textContent = orig;
     }
   });
 

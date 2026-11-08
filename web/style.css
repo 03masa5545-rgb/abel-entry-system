@@ -432,6 +432,42 @@ ul.plain li:last-child { border-bottom: none; padding-bottom: 2px; }
 
 /* ---------- ユーティリティ ---------- */
 .hidden { display: none !important; }
+
+/* ローディング表示（解錠など時間がかかる処理用） */
+@keyframes abel-spin { to { transform: rotate(360deg); } }
+
+#loading { text-align: center; color: var(--blue-dark, #045a9c); font-weight: 700; }
+#loading::before {
+  content: "";
+  display: block;
+  width: 34px; height: 34px;
+  margin: 6px auto 12px;
+  border-radius: 50%;
+  border: 4px solid rgba(6, 121, 206, .2);
+  border-top-color: #0679CE;
+  animation: abel-spin .8s linear infinite;
+}
+
+button.is-loading { pointer-events: none; opacity: .88; }
+button.is-loading .btn-icon { display: none; }
+button.is-loading::before {
+  content: "";
+  flex: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, .35);
+  border-top-color: #fff;
+  animation: abel-spin .7s linear infinite;
+}
+button.btn-exit.is-loading::before,
+button.secondary.is-loading::before {
+  border-color: rgba(6, 121, 206, .25);
+  border-top-color: #0679CE;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #loading::before, button.is-loading::before { animation-duration: 2.4s; }
+}
 .small { font-size: 13px; color: var(--gray); }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 footer.app-footer { text-align: center; color: var(--gray-light); font-size: 12px; padding: 18px 16px 26px; }

@@ -200,7 +200,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  document.getElementById("sbTestBtn").addEventListener("click", async () => {
+  document.getElementById("sbTestBtn").addEventListener("click", async (ev) => {
+    const btn = ev.currentTarget;
+    const orig = btn.textContent;
+    btn.disabled = true;
+    btn.classList.add("is-loading");
+    btn.textContent = "接続中…";
     const list = document.getElementById("sbTestResult");
     list.innerHTML = "<li>接続中…</li>";
     try {
@@ -220,6 +225,10 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {
       list.innerHTML = "<li>接続テストに失敗しました</li>";
       intMsg(e.message);
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove("is-loading");
+      btn.textContent = orig;
     }
   });
 
