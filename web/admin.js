@@ -9,7 +9,36 @@ const state = {
   adminId: localStorage.getItem(LS_ADMIN_ID) || "demo-admin",
   rankPeriod: "month",
   rankType: "count",
+  idToken: null, // 本番（LIFF）のIDトークン
+  demoMode: true,
 };
+
+function authHeaders() {
+  if (state.idToken) return { Authorization: "Bearer " + state.idToken };
+  return { "X-Line-User-Id": state.adminId };
+}
+
+/* 本番では LIFF で管理者の LINE 本人確認を行い、IDトークンで認証する。
+   デモモードでは従来どおり管理者ID入力で切り替える。 */
+async function initAuth() {
+  try {
+    const cfg = await fetch("/api/config").then((r) => r.json());
+    state.demoMode = !!cfg.demoMode;
+    if (cfg.liffId && window.liff) {
+      await liff.init({ liffId: cfg.liffId });
+      if (!liff.isLoggedIn()) { liff.login(); return false; }
+      state.idToken = liff.getIDToken();
+      window.abelIdToken = state.idToken;
+    }
+  } catch (e) { /* 取得できない場合はデモ扱い */ }
+  if (state.idToken) {
+    const bar = document.querySelector(".demo-bar");
+    if (bar) bar.style.display = "none";
+    const now = $("adminIdNow");
+    if (now) now.textContent = "LINE認証済み";
+  }
+  return true;
+}
 
 const RESULT_LABELS = {
   success: "成功",
@@ -32,7 +61,7 @@ function showMessage(text, kind) {
 
 async function api(path, options) {
   const opts = options || {};
-  const headers = Object.assign({ "X-Line-User-Id": state.adminId }, opts.headers || {});
+  const headers = Object.assign({}, authHeaders(), opts.headers || {});
   if (opts.body) headers["Content-Type"] = "application/json";
   let res;
   try {
@@ -332,5 +361,28 @@ document.addEventListener("DOMContentLoaded", () => {
   bindTabs("rankPeriodTabs", "period", "rankPeriod", loadRankings);
   bindTabs("rankTypeTabs", "type", "rankType", loadRankings);
 
-  loadAll();
+  // CSVは認証ヘッダー付きで取得してダウンロードする（本番では ?as= が使えないため）
+  [["histCsvLink", "history.csv"], ["rankCsvLink", "rankings.csv"]].forEach(([id, name]) => {
+    const link = $(id);
+    if (!link) return;
+    link.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        const res = await fetch(link.href, { headers: authHeaders() });
+        if (!res.ok) throw new Error("csv_fetch_failed");
+        const blob = await res.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      } catch (err) {
+        showMessage("CSVの取得に失敗しました。", "error");
+      }
+    });
+  });
+
+  (async () => {
+    if (await initAuth()) await loadAll();
+  })();
 });

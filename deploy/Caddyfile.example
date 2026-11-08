@@ -1,0 +1,7 @@
+# Caddy リバースプロキシ例（HTTPS証明書は自動取得）
+# ドメイン部分を実際のものに置き換えて使う。
+# 配置例: /etc/caddy/Caddyfile に追記し、sudo systemctl reload caddy
+
+entry.example.jp {
+	reverse_proxy 127.0.0.1:8000
+}

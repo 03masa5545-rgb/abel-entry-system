@@ -1,0 +1,23 @@
+# アーベル入退室システム systemd ユニット例
+# 配置: /etc/systemd/system/abel-entry.service
+# 前提: コードを /opt/abel-entry-system に配置し、.env を本番値で作成済み
+# 有効化: sudo systemctl daemon-reload && sudo systemctl enable --now abel-entry
+
+[Unit]
+Description=Abel entry system
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/abel-entry-system
+EnvironmentFile=/opt/abel-entry-system/.env
+ExecStart=/usr/bin/python3 run.py
+Restart=always
+RestartSec=3
+# 実行ユーザー（環境に合わせて変更。data/ ディレクトリへの書き込み権限が必要）
+User=abel
+Group=abel
+
+[Install]
+WantedBy=multi-user.target

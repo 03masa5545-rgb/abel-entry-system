@@ -115,6 +115,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.serve_static("vendor/qrcode.min.js", "text/javascript; charset=utf-8")
             if path == "/style.css":
                 return self.serve_static("style.css", "text/css; charset=utf-8")
+            if path == "/healthz":
+                return self.send_json(200, {"ok": True, "demo": config.DEMO_MODE, "time": db.now_iso()})
             if path == "/api/config":
                 return self.send_json(200, {"demoMode": config.DEMO_MODE, "liffId": config.LIFF_ID or None})
             if path == "/api/me":
@@ -527,7 +529,26 @@ def auto_exit_loop():
             print(f"[auto-exit error] {exc}")
 
 
+def _startup_checks():
+    """起動時の設定チェック。本番モードで必須項目が欠けていたら明示する。"""
+    if config.DEMO_MODE:
+        print("[WARN] DEMO_MODE=1 で起動しています。本番運用では DEMO_MODE=0 にしてください。")
+        return
+    missing = [
+        name
+        for name in ("LIFF_ID", "LINE_CHANNEL_ID", "LINE_CHANNEL_SECRET", "LINE_CHANNEL_ACCESS_TOKEN")
+        if not getattr(config, name)
+    ]
+    if not config.ADMIN_LINE_USER_IDS:
+        missing.append("ADMIN_LINE_USER_IDS")
+    if missing:
+        print("[ERROR] 本番モードで未設定の環境変数があります: " + ", ".join(missing))
+    if not all(switchbot_api.env_creds()):
+        print("[WARN] SwitchBotの環境変数が未設定です。管理画面で連携情報を保存していない場合、解錠はモック動作になります。")
+
+
 def main():
+    _startup_checks()
     threading.Thread(target=auto_exit_loop, daemon=True).start()
     server = ThreadingHTTPServer(("0.0.0.0", config.PORT), Handler)
     mode = "DEMO" if config.DEMO_MODE else "PRODUCTION"
