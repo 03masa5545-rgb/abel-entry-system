@@ -52,7 +52,7 @@ function authHeaders() {
   return { "X-Line-User-Id": state.demoUserId };
 }
 
-async function api(path, options) {
+async function api(path, options, retried) {
   const opts = options || {};
   const headers = Object.assign({}, authHeaders(), opts.headers || {});
   if (opts.body) headers["Content-Type"] = "application/json";
@@ -69,6 +69,14 @@ async function api(path, options) {
   let data = null;
   try { data = await res.json(); } catch (e) { /* 空レスポンス */ }
   if (!res.ok) {
+    // 本番（LIFF）でIDトークンが期限切れの場合は取り直して1回だけ再試行する
+    if (res.status === 401 && !retried && !state.demoMode && window.liff) {
+      const fresh = liff.getIDToken();
+      if (fresh && fresh !== state.idToken) {
+        state.idToken = fresh;
+        return api(path, options, true);
+      }
+    }
     throw { code: data && data.error ? data.error : null, status: res.status, data };
   }
   return data;
@@ -112,8 +120,12 @@ async function init() {
   }
 
   if (!state.idToken) {
+    if (!state.demoMode) {
+      // 本番で認証できなかった場合はデモ扱いにせず、開き直しを案内する
+      $("loading").textContent = "認証できませんでした。公式LINEのメニューから開き直してください。";
+      return;
+    }
     // デモモード: ユーザーID切替バーを表示
-    state.demoMode = true;
     $("demoBar").classList.remove("hidden");
     $("demoUserId").value = state.demoUserId;
   }

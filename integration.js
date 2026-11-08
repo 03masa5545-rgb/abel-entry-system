@@ -11,12 +11,13 @@ function intAdminId() {
 
 async function intApi(path, options) {
   const opts = options || {};
+  // 本番（LIFF）では admin.js がセットした IDトークンを使う
+  const headers = { "Content-Type": "application/json" };
+  if (window.abelIdToken) headers["Authorization"] = "Bearer " + window.abelIdToken;
+  else headers["X-Line-User-Id"] = intAdminId();
   const res = await fetch(path, {
     method: opts.method || "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Line-User-Id": intAdminId(),
-    },
+    headers,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
