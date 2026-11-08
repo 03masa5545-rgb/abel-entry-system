@@ -172,6 +172,16 @@ function renderMe(me) {
     evNote.classList.toggle("hidden", !me.eventMode);
   }
   $("memberName").textContent = me.member.name || "";
+  // 公式LINE連携の状態
+  const linkStatus = $("lineLinkStatus");
+  if (linkStatus) {
+    const linked = !!me.member.linked_at;
+    linkStatus.classList.toggle("linked", linked);
+    $("lineLinkText").textContent = linked
+      ? "連携済み（" + fmtDateTime(me.member.linked_at) + "）"
+      : "未連携";
+    $("lineLinkBtn").textContent = linked ? "公式LINEと連携し直す" : "公式LINEと連携する";
+  }
   const inside = !!me.openStay;
   $("stateText").textContent = inside ? "入室中" : "入室していません";
   $("stateText").classList.toggle("is-in", inside);
@@ -284,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   $("entryBtn").addEventListener("click", async () => {
-    setBtnLoading($("entryBtn"), true, "解錠中…（約5秒かかります）");
+    setBtnLoading($("entryBtn"), true, "解錠中…");
     try {
       const r = await api("/api/entry", { method: "POST", body: { method: "liff" } });
       showMessage(
@@ -298,6 +308,28 @@ document.addEventListener("DOMContentLoaded", () => {
       showMessage(errorMessage(err), "error");
     } finally {
       setBtnLoading($("entryBtn"), false);
+    }
+  });
+
+  $("lineLinkBtn").addEventListener("click", async () => {
+    const btn = $("lineLinkBtn");
+    btn.disabled = true;
+    btn.textContent = "連携ページを準備中…";
+    try {
+      const r = await api("/api/link/nonce", { method: "POST", body: {} });
+      if (r.accountLinkUrl) {
+        // 本番: LINE公式のアカウント連携ページへ遷移する（完了はWebhookで受け取る）
+        location.href = r.accountLinkUrl;
+        return;
+      }
+      // デモ/未設定環境: その場で連携完了をシミュレートする
+      await api("/api/link/demo-complete", { method: "POST", body: { nonce: r.nonce } });
+      showMessage("公式LINEとの連携が完了しました。", "ok");
+      await loadMe();
+    } catch (err) {
+      showMessage(errorMessage(err), "error");
+    } finally {
+      btn.disabled = false;
     }
   });
 

@@ -17,13 +17,8 @@
   </div>
 </header>
 
-<div class="static-demo-banner">
-  これはブラウザだけで動くデモ版です。登録したデータはこのブラウザの中にだけ保存されます。実際のLINE・SwitchBot連携にはサーバー版が必要です。
-  <a href="https://github.com/03masa5545-rgb/abel-entry-system" target="_blank" rel="noopener">GitHubリポジトリはこちら</a>
-</div>
-
-
 <main class="wide">
+    <div class="static-demo-banner">これは<strong>動作確認用のデモ（管理者画面）</strong>です。データはこのブラウザの中だけに保存されます。「管理者ID」に <strong>demo-admin</strong> と入れて「このIDで使う」を押してください。利用者画面は <a href="index.html">index.html</a> です。</div>
   <div class="demo-bar">
     <div class="title">管理者ID</div>
     <div class="inline-form">
@@ -76,7 +71,7 @@
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>会員ID</th><th>氏名</th><th>LINEユーザーID</th><th>登録日</th><th>ステータス</th></tr></thead>
+        <thead><tr><th>会員ID</th><th>氏名</th><th>LINEユーザーID</th><th>登録日</th><th>LINE連携</th><th>ステータス</th></tr></thead>
         <tbody id="memberBody"><tr><td colspan="5">読み込み中…</td></tr></tbody>
       </table>
     </div>
@@ -193,7 +188,7 @@
 <footer class="app-footer">アーベル 入退室システム 管理者画面</footer>
 <script src="vendor/qrcode.min.js"></script>
 <script src="mock-backend.js"></script>
-<script src="admin.js"></script>
+  <script src="admin.js"></script>
 <script src="integration.js"></script>
 </body>
 </html>

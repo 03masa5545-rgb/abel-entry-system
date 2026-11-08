@@ -130,7 +130,7 @@ async function loadMembers() {
     const data = await api("/api/admin/members" + (q ? "?q=" + encodeURIComponent(q) : ""));
     body.innerHTML = "";
     if (!data.items || !data.items.length) {
-      body.innerHTML = '<tr><td colspan="5">会員が見つかりません。</td></tr>';
+      body.innerHTML = '<tr><td colspan="6">会員が見つかりません。</td></tr>';
       return;
     }
     for (const m of data.items) {
@@ -143,6 +143,7 @@ async function loadMembers() {
         "<td>" + esc(m.name) + "</td>" +
         "<td>" + esc(m.line_user_id) + "</td>" +
         "<td>" + esc(fmtDate(m.registered_at)) + "</td>" +
+        "<td>" + (m.linked_at ? esc(fmtDate(m.linked_at)) : "未連携") + "</td>" +
         '<td><select data-member-id="' + esc(m.member_id) + '">' + options + "</select></td>";
       body.appendChild(tr);
     }
@@ -315,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const orig = btn.textContent;
     btn.disabled = true;
     btn.classList.add("is-loading");
-    btn.textContent = "解錠中…（約5秒かかります）";
+    btn.textContent = "解錠中…";
     try {
       await api("/api/admin/unlock", { method: "POST", body: {} });
       showMessage("遠隔解錠しました。", "ok");

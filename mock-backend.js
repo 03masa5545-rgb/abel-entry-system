@@ -317,6 +317,7 @@
           name: name,
           status: "active",
           registered_at: nowIso(),
+          linked_at: null,
         };
         db.members.push(member);
       }
@@ -324,6 +325,7 @@
       return jsonRes(200, {
         member_id: member.member_id, line_user_id: member.line_user_id,
         name: member.name, status: member.status, registered_at: member.registered_at,
+        linked_at: member.linked_at || null,
       });
     }
 
@@ -341,6 +343,7 @@
         member: {
           member_id: member.member_id, line_user_id: member.line_user_id,
           name: member.name, status: member.status, registered_at: member.registered_at,
+          linked_at: member.linked_at || null,
         },
         openStay: stay ? { stay_id: stay.stay_id, entry_at: stay.entry_at } : null,
         history: history,
@@ -406,6 +409,31 @@
         ok: true, stay_id: stay.stay_id, entry_at: stay.entry_at,
         unlock_mode: unlockMode, event_mode: unlockMode === "event",
       });
+    }
+
+    if (path === "/api/link/nonce" && method === "POST") {
+      if (!uid) return jsonRes(401, { error: "unauthorized", message: "LINE認証が必要です。" });
+      const member = memberByLine(db, uid);
+      if (!member) return jsonRes(403, { error: "unregistered", message: "会員登録が必要です。" });
+      db.linkNonces = db.linkNonces || [];
+      const nonce = randomId("nonce_");
+      db.linkNonces.push({ nonce: nonce, member_id: member.member_id, used_at: null });
+      saveDb(db);
+      // デモでは連携URLを発行しない（demo-completeで完了をシミュレート）
+      return jsonRes(200, { nonce: nonce, accountLinkUrl: null });
+    }
+
+    if (path === "/api/link/demo-complete" && method === "POST") {
+      if (!uid) return jsonRes(401, { error: "unauthorized", message: "LINE認証が必要です。" });
+      const member = memberByLine(db, uid);
+      if (!member) return jsonRes(403, { error: "unregistered", message: "会員登録が必要です。" });
+      db.linkNonces = db.linkNonces || [];
+      const rec = db.linkNonces.find((n) => n.nonce === body.nonce && n.member_id === member.member_id && !n.used_at);
+      if (!rec) return jsonRes(400, { error: "invalid_nonce", message: "連携トークンが無効です。" });
+      rec.used_at = nowIso();
+      member.linked_at = rec.used_at;
+      saveDb(db);
+      return jsonRes(200, { ok: true, linked_at: member.linked_at });
     }
 
     if (path === "/api/exit" && method === "POST") {
@@ -478,7 +506,7 @@
           .filter((m) => !q || m.name.includes(q) || m.member_id.includes(q))
           .map((m) => ({
             member_id: m.member_id, line_user_id: m.line_user_id, name: m.name,
-            status: m.status, registered_at: m.registered_at,
+            status: m.status, registered_at: m.registered_at, linked_at: m.linked_at || null,
           }));
         return jsonRes(200, { items: items });
       }
